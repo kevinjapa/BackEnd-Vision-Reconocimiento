@@ -14,7 +14,7 @@ def obtener_ip_conexion():
         ip_address = '127.0.0.1'
     return ip_address
 
-def add_glasses(image, eye_coords, glasses_img):
+def gafas(image, eye_coords, glasses_img):
     # Calcular el ancho de las gafas en función de la distancia entre los ojos
     eye_width = eye_coords[1][0] - eye_coords[0][0] + eye_coords[1][2]
     if eye_width <= 0:
@@ -51,7 +51,7 @@ def add_glasses(image, eye_coords, glasses_img):
             if resized_glasses[i - top_left[1], j - top_left[0], 3] > 0: 
                 image[i, j] = resized_glasses[i - top_left[1], j - top_left[0]]
 
-def add_clown_nose(image, nose_coords, nose_img, offset_y=0):
+def nariz(image, nose_coords, nose_img, offset_y=0):
     if not nose_coords:
         print("Error: No se detectó la nariz.")
         return
@@ -67,7 +67,7 @@ def add_clown_nose(image, nose_coords, nose_img, offset_y=0):
                 if 0 <= y_offset < image.shape[0] and 0 <= x_offset < image.shape[1]:
                     image[y_offset, x_offset] = resized_nose[i, j]
 
-def add_mustache(image, mouth_coords, mustache_img):
+def bigote(image, mouth_coords, mustache_img):
     if not mouth_coords:
         print("Error: No se detectó la boca.")
         return
@@ -87,19 +87,15 @@ def add_mustache(image, mouth_coords, mustache_img):
                 if 0 <= y_offset < image.shape[0] and 0 <= x_offset < image.shape[1]:
                     image[y_offset, x_offset] = resized_mustache[i, j]
 
-def add_hat(image, face_coords, hat_img):
+def sombrero(image, face_coords, hat_img):
     face_x, face_y, face_w, face_h = face_coords[0]
     hat_width = face_w
-    # hat_height = int(hat_img.shape[0] * (hat_width / hat_img.shape[1]))
     hat_height = int(hat_img.shape[0] * (hat_width / hat_img.shape[1]))
     if hat_height <= 0:
         print("Error: La altura del sombrero calculada es inválida.")
         return
     
     resized_hat = cv2.resize(hat_img, (hat_width, hat_height))
-    
-    # Calcular la posición superior izquierda del sombrero
-    # top_left = (face_x + face_w // 2 - resized_hat.shape[1] // 2, face_y - resized_hat.shape[0])
     top_left = (face_x + face_w // 2 - resized_hat.shape[1] // 2, face_y + face_h // 4 - resized_hat.shape[0])
 
     # Asegurarse de que el sombrero no salga de los bordes superiores de la imagen
@@ -114,9 +110,7 @@ def add_hat(image, face_coords, hat_img):
                 if 0 <= y < image.shape[0] and 0 <= x < image.shape[1]:
                     image[y, x] = resized_hat[i, j]
 
-
-
-def draw_rectangles(image, coords, color):
+def graficarPuntosRecividos(image, coords, color):
     for (x, y, w, h) in coords:
         cv2.rectangle(image, (x, y), (x + w, y + h), color, 2)
 
@@ -152,7 +146,6 @@ while True:
     print('ZIP recibido y guardado correctamente')
 
     with zipfile.ZipFile(zip_path, 'r') as zip_ref:
-        # zip_ref.extractall(".")
         zip_ref.extractall("recibido/")
 
     print('Archivos descomprimidos')
@@ -180,72 +173,36 @@ while True:
     mouth_coords = points['mouth'][:1]
     eye_coords = points['eye'][:2]
 
-    image_path = "recibido/output.png"
-    image = cv2.imread(image_path, cv2.IMREAD_UNCHANGED)
+    image = cv2.imread("recibido/output.png", cv2.IMREAD_UNCHANGED)
 
-    draw_rectangles(image, face_coords, (255, 0, 0))
-    draw_rectangles(image, nose_coords, (0, 255, 0))
-    draw_rectangles(image, mouth_coords, (0, 0, 255))
-    draw_rectangles(image, eye_coords, (255, 255, 0))
+    graficarPuntosRecividos(image, face_coords, (255, 0, 0))
+    graficarPuntosRecividos(image, nose_coords, (0, 255, 0))
+    graficarPuntosRecividos(image, mouth_coords, (0, 0, 255))
+    graficarPuntosRecividos(image, eye_coords, (255, 255, 0))
 
     cv2.imwrite("results/Img_Reconocimiento.png", image)
     cv2.imshow("Img Reconocimiento Filtro", image)
     
-    image = cv2.imread(image_path, cv2.IMREAD_UNCHANGED)
+    imageRecibida = cv2.imread("recibido/output.png", cv2.IMREAD_UNCHANGED)
 
-    glasses_img_path = "assets/gafas.png"
-    if not os.path.exists(glasses_img_path):
-        print(f"Error: {glasses_img_path} no existe.")
-        exit(1)
-
-    glasses_img = cv2.imread(glasses_img_path, cv2.IMREAD_UNCHANGED)
-    if glasses_img is None:
-        print(f"Error: No se pudo leer {glasses_img_path}. imagen válida.")
-        exit(1)
-
+    img_gafas= cv2.imread("assets/gafas.png", cv2.IMREAD_UNCHANGED)
     if len(eye_coords) >= 2:
-        add_glasses(image, eye_coords, glasses_img)
+        gafas(imageRecibida, eye_coords, img_gafas)
 
-    nose_img_path = "assets/clown_nose.png"
-    if not os.path.exists(nose_img_path):
-        print(f"Error: {nose_img_path} no existe.")
-        exit(1)
+    nariz_img = cv2.imread("assets/clown_nose.png", cv2.IMREAD_UNCHANGED)
+    # if nose_coords:
+    nariz(imageRecibida, nose_coords, nariz_img, offset_y=-10)
 
-    nose_img = cv2.imread(nose_img_path, cv2.IMREAD_UNCHANGED)
-    if nose_img is None:
-        print(f"Error: No se pudo leer {nose_img_path}. imagen válida.")
-        exit(1)
+    bigote_img = cv2.imread("assets/mustache.png", cv2.IMREAD_UNCHANGED)
+    # if mouth_coords:
+    bigote(imageRecibida, mouth_coords, bigote_img)
 
-    if nose_coords:
-        add_clown_nose(image, nose_coords, nose_img, offset_y=-10)
+    sombrero_img = cv2.imread("assets/sombrero.png", cv2.IMREAD_UNCHANGED)
+    # if len(face_coords) >= 1:
+    sombrero(imageRecibida, face_coords, sombrero_img)
 
-    mustache_img_path = "assets/mustache.png"
-    if not os.path.exists(mustache_img_path):
-        print(f"Error: {mustache_img_path} no existe.")
-        exit(1)
-
-    mustache_img = cv2.imread(mustache_img_path, cv2.IMREAD_UNCHANGED)
-    if mustache_img is None:
-        print(f"Error: No se pudo leer {mustache_img_path}. imagen válida.")
-        exit(1)
-
-    if mouth_coords:
-        add_mustache(image, mouth_coords, mustache_img)
-
-    hat_img_path = "assets/sombrero.png"
-    if not os.path.exists(hat_img_path):
-        print(f"Error: {hat_img_path} no existe.")
-        exit(1)
-
-    hat_img = cv2.imread(hat_img_path, cv2.IMREAD_UNCHANGED)
-    if hat_img is None:
-        print(f"Error: No se pudo leer {hat_img_path}. imagen válida.")
-        exit(1)
-    if len(face_coords) >= 1:
-         add_hat(image, face_coords, hat_img)
-
-    cv2.imwrite("results/Img_Filtros.png", image)
-    cv2.imshow("Img Filtros", image)
+    cv2.imwrite("results/Img_Filtros.png", imageRecibida)
+    cv2.imshow("Img Filtros", imageRecibida)
 
     print('Resultado Generado')
     print('================================================================')
